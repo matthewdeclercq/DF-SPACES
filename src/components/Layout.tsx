@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { useState, useEffect } from 'react'
-import { Menu, X, User, Users, FolderOpen, LogOut } from 'lucide-react'
+import { Menu, X, User, Users, FolderOpen, LogOut, MessageSquare } from 'lucide-react'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 
 interface LayoutProps {
@@ -90,6 +90,20 @@ export default function Layout({ children }: LayoutProps) {
                     <span>Projects</span>
                   </Button>
                 </Link>
+                <Link href="/feedback/provider">
+                  <Button variant="ghost" className="flex items-center space-x-2">
+                    <MessageSquare className="h-4 w-4" />
+                    <span>My Feedback</span>
+                  </Button>
+                </Link>
+                {isAdmin && (
+                  <Link href="/admin/feedback">
+                    <Button variant="ghost" className="flex items-center space-x-2">
+                      <MessageSquare className="h-4 w-4" />
+                      <span>Admin Feedback</span>
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
 
@@ -155,6 +169,20 @@ export default function Layout({ children }: LayoutProps) {
                     <span>Projects</span>
                   </Button>
                 </Link>
+                <Link href="/feedback/provider" onClick={closeMobileMenu}>
+                  <Button variant="ghost" className="w-full justify-start flex items-center space-x-3">
+                    <MessageSquare className="h-4 w-4" />
+                    <span>My Feedback</span>
+                  </Button>
+                </Link>
+                {isAdmin && (
+                  <Link href="/admin/feedback" onClick={closeMobileMenu}>
+                    <Button variant="ghost" className="w-full justify-start flex items-center space-x-3">
+                      <MessageSquare className="h-4 w-4" />
+                      <span>Admin Feedback</span>
+                    </Button>
+                  </Link>
+                )}
                 
                 {/* Mobile User Info */}
                 <div className="pt-3 border-t">

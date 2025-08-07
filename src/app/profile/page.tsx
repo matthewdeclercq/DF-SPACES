@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { useMockAuth } from '@/hooks/useMockAuth'
 import { mockAuth } from '@/lib/mock-auth'
+import PendingFeedbackRequests from '@/components/PendingFeedbackRequests'
 
 const profileSchema = z.object({
   bio: z.string().max(500, 'Bio must be less than 500 characters'),
@@ -130,7 +131,10 @@ export default function ProfilePage() {
 
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Pending Feedback Requests */}
+        <PendingFeedbackRequests />
+        
         <Card>
           <CardHeader>
             <CardTitle>Profile</CardTitle>

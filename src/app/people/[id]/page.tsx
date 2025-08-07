@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Layout from '@/components/Layout'
+import FeedbackReceivedSection from '@/components/FeedbackReceivedSection'
 
 interface CompanyUser {
   id: string
@@ -315,6 +316,21 @@ export default function UserProfilePage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Feedback Section - Only visible to admins or profile owner */}
+          {(currentUser?.role === 'admin' || currentUser?.id === user.id) && (
+            <div className="lg:col-span-3 mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Feedback Received</CardTitle>
+                  <CardDescription>Feedback from colleagues and projects</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <FeedbackReceivedSection userId={user.id} currentUser={currentUser} />
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
     </Layout>
