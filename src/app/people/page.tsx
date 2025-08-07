@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import Layout from '@/components/Layout'
 
 interface CompanyUser {
   id: string
@@ -129,168 +130,122 @@ export default function PeoplePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <nav className="border-b bg-card">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-6">
-              <span className="text-xl font-bold text-primary">DF Spaces</span>
-              <div className="flex items-center space-x-4">
-                <Button variant="ghost" onClick={() => router.push('/profile')}>
-                  My Profile
-                </Button>
-                <Button variant="ghost" onClick={() => router.push('/people')}>
-                  People
-                </Button>
-                <Button variant="ghost" onClick={() => router.push('/projects')}>
-                  Projects
-                </Button>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              {currentUser && (
-                <div className="text-right">
-                  <span className="text-sm text-muted-foreground">
-                    Welcome, {currentUser.name}
-                  </span>
-                  <div className="text-xs text-muted-foreground">
-                    {currentUser.role} • {currentUser.email}
-                  </div>
-                </div>
-              )}
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (typeof window !== 'undefined') {
-                    localStorage.removeItem('mockUser')
-                    window.location.href = '/'
-                  }
-                }}
-              >
-                Logout
-              </Button>
-            </div>
+    <Layout>
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">People</h1>
+          <p className="text-muted-foreground">Connect with your colleagues</p>
+        </div>
+
+        {/* Search and Filter */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <input
+              type="text"
+              placeholder="Search by name, email, position, or bio..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full p-3 border border-input rounded-md bg-background"
+            />
+          </div>
+          <div className="sm:w-48">
+            <select
+              value={selectedDepartment}
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+              className="w-full p-3 border border-input rounded-md bg-background"
+            >
+              {departments.map(dept => (
+                <option key={dept} value={dept}>
+                  {dept === 'all' ? 'All Departments' : dept}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
-      </nav>
-      
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold">People</h1>
-            <p className="text-muted-foreground">Connect with your colleagues</p>
-          </div>
 
-          {/* Search and Filter */}
-          <div className="mb-6 flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="Search by name, email, position, or bio..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full p-3 border border-input rounded-md bg-background"
-              />
-            </div>
-            <div className="sm:w-48">
-              <select
-                value={selectedDepartment}
-                onChange={(e) => setSelectedDepartment(e.target.value)}
-                className="w-full p-3 border border-input rounded-md bg-background"
-              >
-                {departments.map(dept => (
-                  <option key={dept} value={dept}>
-                    {dept === 'all' ? 'All Departments' : dept}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* People Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredUsers.map((user) => (
-              <Card key={user.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleViewProfile(user.id)}>
-                <CardHeader className="text-center pb-4">
-                  <div className="flex justify-center mb-4">
-                    {user.avatar ? (
-                      <img
-                        src={user.avatar}
-                        alt={user.name}
-                        className="w-20 h-20 rounded-full object-cover border-2 border-primary/20"
-                      />
-                    ) : (
-                      <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
-                        <span className="text-2xl font-bold text-primary">
-                          {user.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <CardTitle className="text-xl">{user.name}</CardTitle>
-                  <CardDescription className="text-base font-medium">
-                    {user.position}
-                  </CardDescription>
-                  <div className="flex items-center justify-center space-x-2">
-                    <span className="text-sm text-muted-foreground">{user.department}</span>
-                    <span className="text-xs text-muted-foreground">•</span>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      user.role === 'admin' 
-                        ? 'bg-red-100 text-red-800' 
-                        : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {user.role}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
-                    {user.bio || 'No bio available'}
-                  </p>
-                  {user.interests && user.interests.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-xs font-medium text-muted-foreground mb-2">Interests:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {user.interests.slice(0, 3).map((interest, index) => (
-                          <span
-                            key={index}
-                            className="text-xs bg-secondary px-2 py-1 rounded-full"
-                          >
-                            {interest}
-                          </span>
-                        ))}
-                        {user.interests.length > 3 && (
-                          <span className="text-xs text-muted-foreground px-2 py-1">
-                            +{user.interests.length - 3} more
-                          </span>
-                        )}
-                      </div>
+        {/* People Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredUsers.map((user) => (
+            <Card key={user.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleViewProfile(user.id)}>
+              <CardHeader className="text-center pb-4">
+                <div className="flex justify-center mb-4">
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.name}
+                      className="w-20 h-20 rounded-full object-cover border-2 border-primary/20"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
+                      <span className="text-2xl font-bold text-primary">
+                        {user.name.charAt(0).toUpperCase()}
+                      </span>
                     </div>
                   )}
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">{user.email}</span>
-                    <Button variant="outline" size="sm">
-                      View Profile
-                    </Button>
+                </div>
+                <CardTitle className="text-xl">{user.name}</CardTitle>
+                <CardDescription className="text-base font-medium">
+                  {user.position}
+                </CardDescription>
+                <div className="flex items-center justify-center space-x-2">
+                  <span className="text-sm text-muted-foreground">{user.department}</span>
+                  <span className="text-xs text-muted-foreground">•</span>
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    user.role === 'admin' 
+                      ? 'bg-red-100 text-red-800' 
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {user.role}
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
+                  {user.bio || 'No bio available'}
+                </p>
+                {user.interests && user.interests.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Interests:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {user.interests.slice(0, 3).map((interest, index) => (
+                        <span
+                          key={index}
+                          className="text-xs bg-secondary px-2 py-1 rounded-full"
+                        >
+                          {interest}
+                        </span>
+                      ))}
+                      {user.interests.length > 3 && (
+                        <span className="text-xs text-muted-foreground px-2 py-1">
+                          +{user.interests.length - 3} more
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {filteredUsers.length === 0 && (
-            <Card>
-              <CardContent className="text-center py-12">
-                <p className="text-muted-foreground">No people found matching your search criteria.</p>
+                )}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{user.email}</span>
+                  <Button variant="outline" size="sm">
+                    View Profile
+                  </Button>
+                </div>
               </CardContent>
             </Card>
-          )}
-
-          <div className="mt-8 text-center text-sm text-muted-foreground">
-            <p>Showing {filteredUsers.length} of {users.length} people</p>
-          </div>
+          ))}
         </div>
-      </main>
-    </div>
+
+        {filteredUsers.length === 0 && (
+          <Card>
+            <CardContent className="text-center py-12">
+              <p className="text-muted-foreground">No people found matching your search criteria.</p>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="mt-8 text-center text-sm text-muted-foreground">
+          <p>Showing {filteredUsers.length} of {users.length} people</p>
+        </div>
+      </div>
+    </Layout>
   )
 } 
