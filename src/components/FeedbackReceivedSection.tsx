@@ -23,6 +23,12 @@ interface FeedbackSubmission {
   }
   request: {
     category: string
+    recipient?: {
+      name: string
+      email: string
+      id?: string
+      _id?: string
+    }
   }
 }
 

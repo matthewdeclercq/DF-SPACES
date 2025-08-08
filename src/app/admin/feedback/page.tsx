@@ -6,16 +6,20 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import Layout from '@/components/Layout'
 import FeedbackDetails from '@/components/FeedbackDetails'
 import { Eye, Plus, Users, FileText } from 'lucide-react'
 
 interface FeedbackSubmission {
   _id: string
+  responses: Array<{
+    question: string
+    answer: string
+  }>
   provider: {
     name: string
     email: string
@@ -70,7 +74,7 @@ export default function AdminFeedbackPage() {
   const [requests, setRequests] = useState<FeedbackRequest[]>([])
   const [selectedSubmission, setSelectedSubmission] = useState<FeedbackSubmission | null>(null)
   const [showDetails, setShowDetails] = useState(false)
-  const [activeTab, setActiveTab] = useState<'submissions' | 'questions' | 'requests'>('submissions')
+  // Tabs are managed via shadcn Tabs; no manual activeTab state needed
   
   // Form states
   const [newQuestionSet, setNewQuestionSet] = useState({
@@ -114,7 +118,9 @@ export default function AdminFeedbackPage() {
 
   const fetchSubmissions = async () => {
     try {
-      const response = await fetch('/api/feedback/submissions')
+      const response = await fetch('/api/feedback/submissions', {
+        headers: currentUser ? { 'X-Mock-User': JSON.stringify(currentUser) } : undefined,
+      })
       if (response.ok) {
         const data = await response.json()
         setSubmissions(data)
@@ -126,7 +132,9 @@ export default function AdminFeedbackPage() {
 
   const fetchQuestions = async () => {
     try {
-      const response = await fetch('/api/feedback/questions')
+      const response = await fetch('/api/feedback/questions', {
+        headers: currentUser ? { 'X-Mock-User': JSON.stringify(currentUser) } : undefined,
+      })
       if (response.ok) {
         const data = await response.json()
         setQuestions(data)
@@ -138,7 +146,9 @@ export default function AdminFeedbackPage() {
 
   const fetchRequests = async () => {
     try {
-      const response = await fetch('/api/feedback/requests')
+      const response = await fetch('/api/feedback/requests', {
+        headers: currentUser ? { 'X-Mock-User': JSON.stringify(currentUser) } : undefined,
+      })
       if (response.ok) {
         const data = await response.json()
         setRequests(data)
@@ -154,6 +164,7 @@ export default function AdminFeedbackPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          ...(currentUser && { 'X-Mock-User': JSON.stringify(currentUser) }),
         },
         body: JSON.stringify({
           approved,
@@ -178,6 +189,7 @@ export default function AdminFeedbackPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(currentUser && { 'X-Mock-User': JSON.stringify(currentUser) }),
         },
         body: JSON.stringify({
           category: newQuestionSet.category,
@@ -201,6 +213,7 @@ export default function AdminFeedbackPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(currentUser && { 'X-Mock-User': JSON.stringify(currentUser) }),
         },
         body: JSON.stringify({
           category: newRequest.category,
@@ -268,36 +281,24 @@ export default function AdminFeedbackPage() {
           <p className="text-muted-foreground">Manage feedback questions, requests, and submissions</p>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex space-x-1 mb-6">
-          <Button
-            variant={activeTab === 'submissions' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('submissions')}
-            className="flex items-center space-x-2"
-          >
-            <FileText className="h-4 w-4" />
-            <span>Submissions</span>
-          </Button>
-          <Button
-            variant={activeTab === 'questions' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('questions')}
-            className="flex items-center space-x-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Question Sets</span>
-          </Button>
-          <Button
-            variant={activeTab === 'requests' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('requests')}
-            className="flex items-center space-x-2"
-          >
-            <Users className="h-4 w-4" />
-            <span>Requests</span>
-          </Button>
-        </div>
+        <Tabs defaultValue="submissions" className="w-full">
+          <TabsList className="mb-6">
+            <TabsTrigger value="submissions" className="flex items-center space-x-2">
+              <FileText className="h-4 w-4 mr-1" />
+              <span>Submissions</span>
+            </TabsTrigger>
+            <TabsTrigger value="questions" className="flex items-center space-x-2">
+              <Plus className="h-4 w-4 mr-1" />
+              <span>Question Sets</span>
+            </TabsTrigger>
+            <TabsTrigger value="requests" className="flex items-center space-x-2">
+              <Users className="h-4 w-4 mr-1" />
+              <span>Requests</span>
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Submissions Tab */}
-        {activeTab === 'submissions' && (
+          {/* Submissions Tab */}
+          <TabsContent value="submissions">
           <Card>
             <CardHeader>
               <CardTitle>Feedback Submissions</CardTitle>
@@ -351,10 +352,10 @@ export default function AdminFeedbackPage() {
               </Table>
             </CardContent>
           </Card>
-        )}
+          </TabsContent>
 
         {/* Questions Tab */}
-        {activeTab === 'questions' && (
+        <TabsContent value="questions">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
@@ -449,10 +450,10 @@ export default function AdminFeedbackPage() {
               </CardContent>
             </Card>
           </div>
-        )}
+        </TabsContent>
 
         {/* Requests Tab */}
-        {activeTab === 'requests' && (
+        <TabsContent value="requests">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
@@ -570,7 +571,9 @@ export default function AdminFeedbackPage() {
               </CardContent>
             </Card>
           </div>
-        )}
+        </TabsContent>
+
+        </Tabs>
 
         {/* Feedback Details Modal */}
         {showDetails && selectedSubmission && (
