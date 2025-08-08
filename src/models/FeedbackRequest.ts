@@ -14,13 +14,19 @@ const FeedbackRequestSchema = new mongoose.Schema({
   targets: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
+    required: false,
+    default: [],
   }],
   recipient: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
+    required: false,
   },
+  recipients: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: [],
+  }],
   deadline: {
     type: Date,
   },

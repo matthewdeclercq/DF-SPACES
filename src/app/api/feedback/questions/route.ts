@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth'
 import mongoose from 'mongoose'
 import FeedbackQuestion from '@/models/FeedbackQuestion'
 import User from '@/models/User'
+import { connectMongo } from '@/lib/mongoose'
+import { getAuthFromRequest, isAdminEmail } from '@/lib/auth'
 
 // Connect to MongoDB
 const connectDB = async () => {
@@ -44,9 +46,9 @@ async function getAuth(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await getAuth(request)
-    // Check if user is admin (supports mock header)
-    if (!auth?.email || !['sarah@company.com'].includes(auth.email)) {
+    const auth = await getAuthFromRequest(request)
+    const isAdmin = Boolean(auth?.isAdmin) || isAdminEmail(auth?.email)
+    if (!auth?.email || !isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
         { status: 403 }
@@ -54,8 +56,11 @@ export async function GET(request: NextRequest) {
     }
     
     try {
-      await connectDB()
-      const questions = await FeedbackQuestion.find()
+      await connectMongo()
+      const { searchParams } = new URL(request.url)
+      const includeArchived = searchParams.get('includeArchived') === 'true'
+      const filter = includeArchived ? {} : { isArchived: { $ne: true } }
+      const questions = await FeedbackQuestion.find(filter)
         .populate('createdBy', 'name email')
         .sort({ createdAt: -1 })
       return NextResponse.json(questions)
@@ -75,9 +80,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await getAuth(request)
-    // Check if user is admin (supports mock header)
-    if (!auth?.email || !['sarah@company.com'].includes(auth.email)) {
+    const auth = await getAuthFromRequest(request)
+    const isAdmin = Boolean(auth?.isAdmin) || isAdminEmail(auth?.email)
+    if (!auth?.email || !isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
         { status: 403 }
@@ -85,7 +90,14 @@ export async function POST(request: NextRequest) {
     }
     
     const body = await request.json()
-    const { category, questions } = body
+    const { name, category, questions } = body
+    
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return NextResponse.json(
+        { error: 'Missing required field: name' },
+        { status: 400 }
+      )
+    }
     
     if (!category || !questions || !Array.isArray(questions) || questions.length === 0) {
       return NextResponse.json(
@@ -102,7 +114,7 @@ export async function POST(request: NextRequest) {
     }
     
     try {
-      await connectDB()
+      await connectMongo()
       // Ensure we have a valid User document to reference as createdBy
       const creator = await User.findOneAndUpdate(
         { email: auth.email },
@@ -111,8 +123,9 @@ export async function POST(request: NextRequest) {
       ).select('_id')
 
       const questionSet = new FeedbackQuestion({
+        name: name.trim(),
         category,
-        questions,
+        questions: questions.map((q: string) => q.trim()),
         createdBy: creator._id,
       })
       await questionSet.save()
@@ -127,9 +140,11 @@ export async function POST(request: NextRequest) {
       if (!Array.isArray(g[key])) g[key] = []
       const newItem = {
         _id: Math.random().toString(36).slice(2),
+        name: name.trim(),
         category,
-        questions,
+        questions: questions.map((q: string) => q.trim()),
         createdBy: { name: auth.name || auth.email, email: auth.email },
+        isArchived: false,
         createdAt: new Date().toISOString(),
       }
       g[key].unshift(newItem)

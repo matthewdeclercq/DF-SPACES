@@ -1,6 +1,11 @@
 import mongoose from 'mongoose'
 
 const FeedbackQuestionSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true,
+  },
   category: {
     type: String,
     required: true,
@@ -14,6 +19,11 @@ const FeedbackQuestionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
+  },
+  isArchived: {
+    type: Boolean,
+    default: false,
+    index: true,
   },
 }, {
   timestamps: true,

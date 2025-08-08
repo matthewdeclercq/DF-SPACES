@@ -6,7 +6,7 @@ import Providers from '@/components/Providers'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'DF Spaces - Company Intranet',
+  title: 'DF Pulse - Company Intranet',
   description: 'Internal company intranet for employee profiles and project management',
 }
 

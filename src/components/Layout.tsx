@@ -3,9 +3,10 @@
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { useState, useEffect } from 'react'
-import { Menu, X, User, Users, FolderOpen, LogOut, MessageSquare } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { Menu, X, User, FolderOpen, LogOut, MessageSquare, Users } from 'lucide-react'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { useSession, signOut as nextAuthSignOut } from 'next-auth/react'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -16,6 +17,8 @@ export default function Layout({ children }: LayoutProps) {
   const [isAdmin, setIsAdmin] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { data: session, status } = useSession()
+  const [appMode, setAppMode] = useState<'mock' | 'real' | null>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -34,10 +37,40 @@ export default function Layout({ children }: LayoutProps) {
     }
   }, [])
 
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/config')
+        const data = res.ok ? await res.json() : { appMode: 'real' }
+        if (!cancelled) setAppMode(data.appMode === 'mock' ? 'mock' : 'real')
+      } catch {
+        if (!cancelled) setAppMode('real')
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    if (appMode === 'real' && session?.user) {
+      setCurrentUser({
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+        role: session.user.role || (session.user.isAdmin ? 'admin' : 'user')
+      })
+      setIsAdmin(Boolean(session.user.isAdmin) || session.user.role === 'admin')
+    }
+  }, [appMode, session])
+
   const handleSignOut = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('mockUser')
-      window.location.href = '/'
+    if (appMode === 'mock') {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('mockUser')
+        window.location.href = '/'
+      }
+    } else {
+      void nextAuthSignOut({ callbackUrl: '/' })
     }
   }
 
@@ -55,7 +88,12 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   // If no user is logged in, just show the children (for login page)
-  if (!currentUser) {
+  const isAuthenticated = appMode === 'mock' ? Boolean(currentUser) : status === 'authenticated'
+  const isOnLogin = typeof window !== 'undefined' && window.location.pathname === '/'
+  if (appMode === null) {
+    return <>{children}</>
+  }
+  if (!isAuthenticated && isOnLogin) {
     return <>{children}</>
   }
 
@@ -67,7 +105,7 @@ export default function Layout({ children }: LayoutProps) {
             {/* Logo and Desktop Navigation */}
             <div className="flex items-center space-x-6">
               <Link href="/profile" className="text-xl font-bold text-primary">
-                DF Spaces
+                DF Pulse
               </Link>
               
               {/* Desktop Navigation Links */}
@@ -78,29 +116,29 @@ export default function Layout({ children }: LayoutProps) {
                     <span>My Profile</span>
                   </Button>
                 </Link>
-                <Link href="/people">
-                  <Button variant="ghost" className="flex items-center space-x-2">
-                    <Users className="h-4 w-4" />
-                    <span>People</span>
-                  </Button>
-                </Link>
-                <Link href="/projects">
-                  <Button variant="ghost" className="flex items-center space-x-2">
-                    <FolderOpen className="h-4 w-4" />
-                    <span>Projects</span>
-                  </Button>
-                </Link>
-                <Link href="/feedback/provider">
-                  <Button variant="ghost" className="flex items-center space-x-2">
-                    <MessageSquare className="h-4 w-4" />
-                    <span>My Feedback</span>
-                  </Button>
-                </Link>
+                {/* People link removed per requirements */}
+                {/* My Feedback link removed */}
                 {isAdmin && (
                   <Link href="/admin/feedback">
                     <Button variant="ghost" className="flex items-center space-x-2">
                       <MessageSquare className="h-4 w-4" />
-                      <span>Admin Feedback</span>
+                      <span>Feedback Administration</span>
+                    </Button>
+                  </Link>
+                )}
+                {isAdmin && (
+                  <Link href="/admin/users">
+                    <Button variant="ghost" className="flex items-center space-x-2">
+                      <Users className="h-4 w-4" />
+                      <span>User Management</span>
+                    </Button>
+                  </Link>
+                )}
+                {isAdmin && (
+                  <Link href="/admin/projects">
+                    <Button variant="ghost" className="flex items-center space-x-2">
+                      <FolderOpen className="h-4 w-4" />
+                      <span>Project Management</span>
                     </Button>
                   </Link>
                 )}
@@ -157,29 +195,29 @@ export default function Layout({ children }: LayoutProps) {
                     <span>My Profile</span>
                   </Button>
                 </Link>
-                <Link href="/people" onClick={closeMobileMenu}>
-                  <Button variant="ghost" className="w-full justify-start flex items-center space-x-3">
-                    <Users className="h-4 w-4" />
-                    <span>People</span>
-                  </Button>
-                </Link>
-                <Link href="/projects" onClick={closeMobileMenu}>
-                  <Button variant="ghost" className="w-full justify-start flex items-center space-x-3">
-                    <FolderOpen className="h-4 w-4" />
-                    <span>Projects</span>
-                  </Button>
-                </Link>
-                <Link href="/feedback/provider" onClick={closeMobileMenu}>
-                  <Button variant="ghost" className="w-full justify-start flex items-center space-x-3">
-                    <MessageSquare className="h-4 w-4" />
-                    <span>My Feedback</span>
-                  </Button>
-                </Link>
+                {/* People link removed per requirements */}
+                {/* My Feedback link removed */}
                 {isAdmin && (
                   <Link href="/admin/feedback" onClick={closeMobileMenu}>
                     <Button variant="ghost" className="w-full justify-start flex items-center space-x-3">
                       <MessageSquare className="h-4 w-4" />
-                      <span>Admin Feedback</span>
+                      <span>Feedback Administration</span>
+                    </Button>
+                  </Link>
+                )}
+                {isAdmin && (
+                  <Link href="/admin/users" onClick={closeMobileMenu}>
+                    <Button variant="ghost" className="w-full justify-start flex items-center space-x-3">
+                      <Users className="h-4 w-4" />
+                      <span>User Management</span>
+                    </Button>
+                  </Link>
+                )}
+                {isAdmin && (
+                  <Link href="/admin/projects" onClick={closeMobileMenu}>
+                    <Button variant="ghost" className="w-full justify-start flex items-center space-x-3">
+                      <FolderOpen className="h-4 w-4" />
+                      <span>Project Management</span>
                     </Button>
                   </Link>
                 )}

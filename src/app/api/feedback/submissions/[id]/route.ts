@@ -17,7 +17,7 @@ export async function PUT(
     const session = await getServerSession()
     
     // Check if user is admin
-    if (!session?.user?.email || !['sarah@company.com'].includes(session.user.email)) {
+    if (!session?.user?.email || !(Boolean((session as any).user?.isAdmin) || ['sarah@company.com', 'm_declercq@digitalfoundry.com'].includes(session.user.email))) {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
         { status: 403 }
@@ -59,9 +59,19 @@ export async function PUT(
     return NextResponse.json(updatedSubmission)
   } catch (error) {
     console.error('Error updating feedback submission:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    // Fallback: in-memory
+    try {
+      const g = globalThis as any
+      const body = await request.json()
+      const { approved, anonymous } = body
+      const arr = Array.isArray(g.__mockFeedbackSubmissions) ? g.__mockFeedbackSubmissions : []
+      const { id } = await params
+      const idx = arr.findIndex((s: any) => s._id === id)
+      if (idx === -1) return NextResponse.json({ error: 'Submission not found' }, { status: 404 })
+      arr[idx] = { ...arr[idx], approved, ...(typeof anonymous === 'boolean' ? { anonymous } : {}) }
+      return NextResponse.json(arr[idx])
+    } catch {
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
   }
 }
